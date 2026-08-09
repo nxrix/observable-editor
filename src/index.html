@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="./favicon.ico">
+  <link rel="stylesheet" href="https://nxrix.github.io/assets/styles/notebook.css">
+  <link rel="stylesheet" href="./assets/css/theme.css">
+  <script src="./assets/js/theme.js"></script>
+  <title>Home</title>
+</head>
+<body>
+  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
+    <main style="width:100%;margin:0 auto">
+      <h1>Notebooks</h1>
+      <hr>
+      <div style="display:grid;gap:0.875rem;grid-template-columns:repeat(auto-fill,minmax(160px,5fr));"></div>
+    </main>
+    <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto">
+      <hr>
+      <div style="height:24px;display:flex">
+        <div style="margin:auto 0;font-family:var(--sans-serif);font-size:13px"></div>
+        <div style="display:flex;height:100%;aspect-ratio:3;margin-left:auto;outline:1px solid var(--theme-foreground-faintest);border-radius:12px"></div>
+      </div>
+    </footer>
+  </div>
+  <script>
+
+(async() => {
+  const list = document.querySelector("main div");
+  const notebooks = await(await fetch("/notebooks/")).json();
+  for (const i of notebooks) {
+    const name = i.split("/").pop().replace(/\.html$/i, "");
+    const title = name
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, c => c.toUpperCase());
+    const a = document.createElement("a");
+    a.href = `/src/editor.html?path=/notebooks/${i}`;
+    a.style.cssText = `
+      display:inline-flex;
+      flex-direction:column;
+      align-items:start;
+      font:400 0.75rem var(--sans-serif);
+      color:var(--theme-foreground);
+      width:100%;
+    `;
+    a.innerHTML = `
+      <img 
+        alt="thumbnail"
+        src="/thumbnails/${name}.png"
+        style="
+          border: 1px solid var(--theme-foreground-faintest);
+          border-radius: 4px;
+          box-sizing: border-box;
+          width: 100%;
+          flex: 1;
+          object-fit: cover
+        "
+      />
+
+      <div style="width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:8px">
+        ${title}
+      </div>
+    `;
+    list.appendChild(a);
+  }
+})();
+
+  </script>
+</body>
+</html>

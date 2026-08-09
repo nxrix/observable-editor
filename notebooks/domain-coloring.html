@@ -1,0 +1,590 @@
+<!doctype html>
+<notebook theme="air">
+  <title>Domain Coloring</title>
+  <script id="0" type="text/markdown">
+    # Domain Coloring
+  </script>
+  <script id="1268" type="text/markdown">
+    Domain coloring is a visualization technique for complex-valued functions. Unlike real-valued functions, which can be graphed in 2D, a complex-valued function has both a complex input and a complex output, making it four-dimensional. Since we cannot directly visualize four dimensions, domain coloring provides a way to represent and understand the function's output using colors.
+    
+    Instead of plotting the output value in extra dimensions, we assign a color to each point in the complex plane based on the value of ${tex`f(z)`}. Typically, the hue (color) represents the argument (phase) of the complex number, while the brightness or saturation represents its magnitude (absolute value).
+  </script>
+  <script id="949" type="application/vnd.observable.javascript">
+    cplot({
+      f: `
+      vec2 f(vec2 z) {
+        vec2 z2 = csqr(z);
+        return cdiv(cmul(z2-vec2(1,0),csqr(z-vec2(2,1))),z2+2.0);
+      }`,
+      domain: [
+        [-2, 3],
+        [-2, 3]
+      ]
+    })
+  </script>
+  <script id="1273" type="text/markdown">
+    A domain coloring graph of the function
+    
+    ${tex`f(z)=\dfrac{(z^2-1)(z-(2+i))^2}{z^2+2+2i}`}
+    
+    Darker spots mark magnitudes close to zero, while brighter spots correspond to larger magnitudes. The function has zeros at ${tex`z=\pm1`} and ${tex`z=2+i`}, and poles at ${tex`z=\pm\sqrt{-2-2i}`}.
+  </script>
+  <script id="1033" type="application/vnd.observable.javascript">
+    cplot({
+      f: `
+      vec2 f(vec2 z) {
+        return cpow(z,3)-vec2(1,0);
+      }`,
+      caption: "f(z) = z^3-1",
+      legends: false
+    })
+  </script>
+  <script id="33" type="application/vnd.observable.javascript">
+    viewof f = Inputs.textarea({
+      rows: 5,
+      value: "vec2 f(vec2 z) {\n" + "  return z;\n" + "}",
+      spellcheck: false
+    })
+  </script>
+  <script id="1057" type="application/vnd.observable.javascript">
+    cplot({
+      f,
+      legends: false
+    })
+  </script>
+  <script id="407" type="application/vnd.observable.javascript">
+    cplot = ({
+      f = "",
+      caption,
+      pixelRatio,
+      base = 2,
+      domain = [
+        [-2, 2],
+        [-2, 2]
+      ],
+      legends = ["abs", "arg"],
+      zoom = true
+    } = {}) => {
+      const cm = cmark(f, { pixelRatio, base });
+      const sl = d3.scaleLinear();
+      const createPlot = (xd, yd) => {
+        const chart = Plot.plot({
+          width: 512 * 0.75,
+          aspectRatio: 1,
+          caption,
+          style: { fontFamily: "var(--sans-serif)" },
+          x: { label: "Real", labelArrow: false, domain: xd, ticks: 5 },
+          y: { label: "Imaginary", labelArrow: false, domain: yd, ticks: 5 },
+          marks: [cm, Plot.frame()]
+        });
+        div.html("").append(() => chart);
+        return [chart.scale("x"), chart.scale("y")];
+      };
+      const div = d3.create("div");
+      const [xs, ys] = createPlot(domain[0], domain[1]);
+      if (zoom) {
+        const z = d3
+          .zoom()
+          .filter((e) => {
+            if (e.touches || e.changedTouches) {
+              const svg = div.select("svg").node();
+              const pts = d3.pointers(e, svg);
+              const [x0, x1] = xs.range,
+                [y0, y1] = ys.range;
+              return pts.some(
+                ([x, y]) =>
+                  x >= Math.min(x0, x1) &&
+                  x <= Math.max(x0, x1) &&
+                  y >= Math.min(y0, y1) &&
+                  y <= Math.max(y0, y1)
+              );
+            }
+            const [x, y] = d3.pointer(e, div.select("svg").node());
+            const [x0, x1] = xs.range,
+              [y0, y1] = ys.range;
+            return (
+              x >= Math.min(x0, x1) &&
+              x <= Math.max(x0, x1) &&
+              y >= Math.min(y0, y1) &&
+              y <= Math.max(y0, y1)
+            );
+          })
+          .on("zoom", (e) => {
+            const t = e.transform;
+            const svg = div.select("svg").node();
+            const rect = svg.getBoundingClientRect();
+            const kx = +svg.getAttribute("width") / rect.width;
+            const ky = +svg.getAttribute("height") / rect.height;
+            const tu = d3.zoomIdentity.translate(t.x * kx, t.y * ky).scale(t.k);
+            const x = sl.domain(xs.domain).range(xs.range);
+            const xd = tu.rescaleX(x).domain();
+            const y = sl.domain(ys.domain).range(ys.range);
+            const yd = tu.rescaleY(y).domain();
+            createPlot(xd, yd);
+          });
+        div.call(z);
+      }
+      /*if (zoom) {
+        const z = d3.zoom().on("zoom", (e) => {
+          const t = e.transform;
+          const x = sl.domain(xs.domain).range(xs.range);
+          const xd = t.rescaleX(x).domain();
+          const y = sl.domain(ys.domain).range(ys.range);
+          const yd = t.rescaleY(y).domain();
+          createPlot(xd, yd);
+        });
+        div.call(z);
+      }*/
+      const p = div.node();
+      const h = p.querySelector("svg").getAttribute("height") - 10;
+      const e = html`
+      <div style="display:flex;align-items:flex-start;width:fit-content;max-width:100%">
+        ${p}
+      </div>`;
+      if (legends) {
+        if (legends === true || legends?.includes("abs")) {
+          const l =
+            base === 10
+              ? ["10⁻³", "10⁻²", "10⁻¹", "1", "10", "10²", "10³"]
+              : Math.abs(base - Math.E) < 1e-12
+              ? ["e⁻³", "e⁻²", "e⁻¹", "1", "e", "e²", "e³"]
+              : [
+                  `1/${base ** 3}`,
+                  `1/${base ** 2}`,
+                  `1/${base}`,
+                  "1",
+                  `${base}`,
+                  `${base ** 2}`,
+                  `${base ** 3}`
+                ];
+          const abs = Plot.plot({
+            width: 55,
+            height: h,
+            x: { axis: null },
+            y: {
+              axis: "right",
+              domain: [0, 1],
+              ticks: [0, 0.11111, 0.2, 0.33333, 0.5, 0.66666, 0.8, 0.88888, 1],
+              tickFormat: (_, i) => ["0", ...l, "∞"][i]
+            },
+            marks: [
+              Plot.text([{ label: "abs" }], {
+                frameAnchor: "bottom",
+                dx: -8,
+                dy: 10,
+                text: "label",
+                textAnchor: "start",
+                lineAnchor: "middle"
+              }),
+              Plot.raster({
+                x1: 0,
+                x2: 1,
+                y1: 0,
+                y2: 1,
+                fill: (x, y) => d3.interpolateGreys(1 - y)
+              }),
+              Plot.frame()
+            ]
+          });
+          if (caption) abs.style.marginTop = "1rem";
+          e.appendChild(abs);
+        }
+        if (legends === true || legends?.includes("arg")) {
+          const arg = Plot.plot({
+            width: 55,
+            height: h,
+            x: { axis: null },
+            y: {
+              axis: "right",
+              domain: [-Math.PI, Math.PI],
+              ticks: [-Math.PI, -Math.PI / 2, 0, Math.PI / 2, Math.PI],
+              tickFormat: (_, i) => ["−π", "−π⁄2", "0", "π⁄2", "π"][i]
+            },
+            marks: [
+              Plot.text([{ label: "arg" }], {
+                frameAnchor: "bottom",
+                dx: -8,
+                dy: 10,
+                text: "label",
+                textAnchor: "start",
+                lineAnchor: "middle"
+              }),
+              Plot.raster({
+                x1: 0,
+                x2: 1,
+                y1: -Math.PI,
+                y2: Math.PI,
+                fill: (x, y) => {
+                  const r0 = 0.08499547839164734 * 1.28 * 1.5;
+                  const a = y + 0.8936868 * Math.PI;
+                  return (
+                    "rgb(" +
+                    oklab2rgb(0.625, r0 * Math.cos(a), r0 * Math.sin(a))
+                      .map((v) => (v * 255 + 0.5) | 0)
+                      .join(",") +
+                    ")"
+                  );
+                }
+              }),
+              Plot.frame()
+            ]
+          });
+          if (caption) arg.style.marginTop = "1rem";
+          e.appendChild(arg);
+        }
+      }
+      return html`<div>${e}</div>`;
+    }
+  </script>
+  <script id="114" type="application/vnd.observable.javascript">
+    cmark = {
+      const vs = `#version 300 es\nlayout(location=0) in vec2 p;\nvoid main() { gl_Position = vec4(p,0,1); }`;
+      const fs = `#version 300 es
+      precision highp float;
+      uniform vec4 iD;
+      uniform vec2 iR;
+      out vec4 fragColor;
+      #define  PI 3.14159265358979
+      #define TAU 6.28318530717959
+    
+      vec2 cconj(vec2 z) { return vec2(z.x,-z.y); }
+    
+      vec2 cmul(vec2 a, vec2 b) {
+        return vec2(
+          a.x*b.x-a.y*b.y,
+          a.x*b.y+a.y*b.x
+        );
+      }
+    
+      vec2 cdiv(vec2 a, vec2 b) {
+        return vec2(
+          a.x*b.x+a.y*b.y,
+          a.y*b.x-a.x*b.y
+        )/dot(b,b);
+      }
+    
+      vec2 cinv(vec2 z) {
+        return cconj(z)/dot(z,z);
+      }
+    
+      vec2 csqr(vec2 z) {
+        return vec2(
+          z.x*z.x-z.y*z.y,
+          2.0*z.x*z.y
+        );
+      }
+    
+      vec2 cexp(vec2 z) {
+        float e = exp(z.x);
+        return e*vec2(cos(z.y),sin(z.y));
+      }
+    
+      vec2 clog(vec2 z) {
+        return vec2(
+          0.5*log(dot(z,z)),
+          atan(z.y,z.x)
+        );
+      }
+    
+      vec2 cpow(vec2 a, vec2 b) {
+        return cexp(cmul(b,clog(a)));
+      }
+    
+      vec2 cpow(vec2 a, float b) {
+        return cexp(clog(a)*b);
+      }
+    
+      vec2 cpow(vec2 z, int p) {
+        vec2 nz = z;
+        for (int i=1;i<p;i++) nz = cmul(nz,z);
+        return nz;
+      }
+    
+      vec2 csqrt(vec2 a) {
+        float r = length(a);
+        float re = sqrt(0.5*(r+a.x));
+        float im = sqrt(0.5*(r-a.x));
+        return vec2(re,a.y<0.0?-im:im);
+      }
+    
+      float carg(vec2 a) { return atan(a.y,a.x); }
+      float cabs(vec2 a) { return length(a); }
+    
+      vec2 csin(vec2 a) { return vec2(sin(a.x)*cosh(a.y), cos(a.x)*sinh(a.y)); }
+      vec2 ccos(vec2 a) { return vec2(cos(a.x)*cosh(a.y),-sin(a.x)*sinh(a.y)); }
+      vec2 ctan(vec2 a) { return cdiv(csin(a),ccos(a)); }
+      vec2 ccot(vec2 a) { return cdiv(ccos(a),csin(a)); }
+      vec2 csinh(vec2 a) { return vec2(sinh(a.x)*cos(a.y),cosh(a.x)*sin(a.y)); }
+      vec2 ccosh(vec2 a) { return vec2(cosh(a.x)*cos(a.y),sinh(a.x)*sin(a.y)); }
+      vec2 ctanh(vec2 a) { return cdiv(csinh(a),ccosh(a)); }
+      vec2 ccoth(vec2 a) { return cdiv(ccosh(a),csinh(a)); }
+    
+      vec2 casin(vec2 z) {
+        return cmul(vec2(0,-1),clog(cmul(vec2(0,1),z)+csqrt(vec2(1,0)-csqr(z))));
+      }
+    
+      vec2 cacos(vec2 z) {
+        return vec2(1.5707963267948966,0)-casin(z);
+      }
+    
+      vec2 catan(vec2 z) {
+        vec2 iz = cmul(vec2(0,1),z);
+        return 0.5*cmul(
+          vec2(0,-1),
+          clog(cdiv(
+            vec2(1,0)+iz,
+            vec2(1,0)-iz
+          ))
+        );
+      }
+    
+      vec2 cacot(vec2 z) {
+        return catan(cinv(z));
+      }
+    
+      vec2 casinh(vec2 z) {
+        return clog(z+csqrt(csqr(z)+vec2(1,0)));
+      }
+    
+      vec2 cacosh(vec2 z) {
+        return clog(
+          z+cmul(
+            csqrt(z+vec2(1,0)),
+            csqrt(z-vec2(1,0))
+          )
+        );
+      }
+    
+      vec2 catanh(vec2 z) {
+        return 0.5*clog(cdiv(vec2(1,0)+z,vec2(1,0)-z));
+      }
+    
+      vec2 cacoth(vec2 z) {
+        return 0.5*clog(cdiv(z+vec2(1,0),z-vec2(1,0)));
+      }
+    
+      //--f--//
+    
+      vec3 oklab2rgb(vec3 c) {
+        vec3 lms = c.x+
+          c.y*vec3(0.3963377774,-0.1055613458,-0.0894841775)+
+          c.z*vec3(0.2158037573,-0.0638541728,-1.2914855480);
+        lms = lms*lms*lms;
+        vec3 r = clamp(vec3(
+           4.0767416621*lms.x-3.3077115913*lms.y+0.2309699292*lms.z,
+          -1.2684380046*lms.x+2.6097574011*lms.y-0.3413193965*lms.z,
+          -0.0041960863*lms.x-0.7034186147*lms.y+1.7076147010*lms.z
+        ),0.0,1.0);
+        return mix(12.92*r,1.055*pow(r,vec3(1.0/2.4))-0.055,step(vec3(0.0031308),r));
+      }
+    
+      float line(float x) {
+        float d = abs(fract(x+0.5)-0.5);
+        float l = 1.0-smoothstep(0.0,max(fwidth(x),0.000005)//--r--//,d);
+        return l * (2.0 - l);
+      }
+    
+      const float r0 = 0.08499547839164734*1.28*1.5;
+      const float o = 0.8936868*PI;
+      void main() {
+        vec2 uv = mix(iD.xy,iD.zw,(gl_FragCoord.xy-0.5)/(iR-1.0));
+        vec2 z = f(uv);
+        if (dot(z,z)<1e-16) z = vec2(1e-16);
+        float ang = atan(z.y,z.x);
+        float mag = length(z);
+        float light = mag/(mag+1.0);
+    
+        float c = r0*(1.0-2.0*abs(light-0.5));
+        float ca = cos(ang+o);
+        float sa = sin(ang+o);
+        vec3 col = oklab2rgb(vec3(light,c*ca,c*sa));
+    
+        float lm = //--b--//;
+        bool l1 = abs(mag-1.0)<0.25;
+        vec3 mc = l1?vec3(0.6):vec3(0.3);
+        if (mag<0.75) mc = vec3(0.6);
+        col = mix(col,mc,line(lm)*(l1?0.6:0.3));
+    
+        float la = 1.5/2.5;
+        float ac = r0*(1.0-2.0*abs(la-0.5));
+        vec3 lc = oklab2rgb(vec3(la,ac*ca,ac*sa));
+        col = mix(col,lc,line(ang/TAU*4.0)*0.5);
+    
+        fragColor = vec4(col,1);
+      }`;
+    
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2", {
+        premultipliedAlpha: false,
+        antialias: false
+      });
+      if (!gl) throw new Error("WebGL2 not supported");
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      const b = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 3, -1, -1, 3]),
+        gl.STATIC_DRAW
+      );
+      gl.enableVertexAttribArray(0);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    
+      const makeShader = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        //if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+        //  throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      };
+      const vss = makeShader(gl.VERTEX_SHADER, vs);
+    
+      invalidation.then(() => {
+        gl.deleteShader(vss);
+        gl.deleteBuffer(b);
+        gl.deleteVertexArray(vao);
+        //const ext = gl.getExtension("WEBGL_lose_context");
+        //ext?.loseContext();
+      });
+    
+      const getProgram = (f, { pixelRatio, base }) => {
+        const p = gl.createProgram();
+        const s = 1 / Math.log(base);
+        const bs = Number.isInteger(s) ? `${s}.0` : `${s}`;
+        const b =
+          base === 2 || base === 1 || base <= 0
+            ? "log2(mag)"
+            : Math.abs(base - Math.E) < 1e-12
+            ? "log(mag)"
+            : `log(mag)*${bs}`;
+        const fss = makeShader(
+          gl.FRAGMENT_SHADER,
+          fs
+            .replace("//--f--//", f)
+            .replace("//--b--//", b)
+            .replace("//--r--//", "*2.0")
+        );
+        gl.attachShader(p, vss);
+        gl.attachShader(p, fss);
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+          const msg = gl.getShaderInfoLog(fss).replace(/\0+$/, "");
+          gl.deleteProgram(p);
+          throw new Error(msg);
+        }
+        gl.deleteShader(fss);
+        return p;
+      };
+    
+      class cmark extends Plot.Mark {
+        constructor({ f, x1, x2, y1, y2, pixelRatio, base, rest }) {
+          super(undefined, rest);
+          this._d = [x1, x2, y1, y2];
+          this._r = pixelRatio;
+          this.program = getProgram(f, {
+            pixelRatio,
+            base
+          });
+          this.liD = gl.getUniformLocation(this.program, "iD");
+          this.liR = gl.getUniformLocation(this.program, "iR");
+          this.canvas2 = document.createElement("canvas");
+          this.ctx = this.canvas2.getContext("2d");
+        }
+        render(_i, scales, _v, d, ctx) {
+          const w = d.width - d.marginLeft - d.marginRight;
+          const h = d.height - d.marginTop - d.marginBottom;
+          const dx =
+            scales.x && scales.x.domain
+              ? scales.x.domain()
+              : [this._d[0], this._d[1]];
+          const dy =
+            scales.y && scales.y.domain
+              ? scales.y.domain()
+              : [this._d[2], this._d[3]];
+          const sw = Math.max(1, Math.round(w * this._r));
+          const sh = Math.max(1, Math.round(h * this._r));
+    
+          if (canvas.width !== sw) canvas.width = sw;
+          if (canvas.height !== sh) canvas.height = sh;
+    
+          gl.viewport(0, 0, canvas.width, canvas.height);
+          gl.useProgram(this.program);
+          gl.bindVertexArray(vao);
+          gl.uniform4f(this.liD, dx[0], dy[0], dx[1], dy[1]);
+          gl.uniform2f(this.liR, canvas.width, canvas.height);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+    
+          ctx?.invalidation?.then(() => {
+            gl.deleteProgram(this.program);
+          });
+    
+          if (this.canvas2.width !== canvas.width)
+            this.canvas2.width = canvas.width;
+          if (this.canvas2.height !== canvas.height)
+            this.canvas2.height = canvas.height;
+    
+          this.ctx.drawImage(canvas, 0, 0);
+    
+          const NS = "http://www.w3.org/2000/svg";
+          const fo = document.createElementNS(NS, "foreignObject");
+          fo.setAttribute("width", w);
+          fo.setAttribute("height", h);
+          this.canvas2.style.width = `${w}px`;
+          this.canvas2.style.height = `${h}px`;
+          fo.appendChild(this.canvas2);
+    
+          const g = document.createElementNS(NS, "g");
+          g.setAttribute("transform", `translate(${d.marginLeft},${d.marginTop})`);
+          g.appendChild(fo);
+    
+          return g;
+        }
+      }
+    
+      return function complex(f, options = {}) {
+        const {
+          x1 = -1,
+          x2 = 1,
+          y1 = -1,
+          y2 = 1,
+          pixelRatio = Math.max(devicePixelRatio, 2),
+          base = 2,
+          ...rest
+        } = options;
+        return new cmark({
+          f,
+          x1,
+          x2,
+          y1,
+          y2,
+          pixelRatio,
+          base,
+          rest
+        });
+      };
+    }
+  </script>
+  <script id="716" type="application/vnd.observable.javascript">
+    oklab2rgb = (L, A, B) => {
+      let l = L + 0.3963377774 * A + 0.2158037573 * B;
+      let m = L - 0.1055613458 * A - 0.0638541728 * B;
+      let s = L - 0.0894841775 * A - 1.291485548 * B;
+      l = l * l * l;
+      m = m * m * m;
+      s = s * s * s;
+      let r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+      let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+      let b = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+      return [toSRGB(r), toSRGB(g), toSRGB(b)];
+    }
+  </script>
+  <script id="713" type="application/vnd.observable.javascript">
+    toSRGB = (x) =>
+      clamp(x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)
+  </script>
+  <script id="728" type="application/vnd.observable.javascript">
+    clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+  </script>
+</notebook>

@@ -1,0 +1,30 @@
+html { height: var(--vh); }
+body { margin: 0; padding: 32px 24px; }
+footer a {
+  color: var(--theme-foreground) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--theme-foreground) !important;
+}
+footer a:hover { text-decoration-color: var(--theme-foreground-focus) !important; }
+footer > div > div:last-child button {
+  background: #0000;
+  /*background: var(--c1);*/
+  color: var(--theme-foreground-faint);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  z-index: 1;
+  cursor: pointer;
+}
+footer > div > div:last-child button:focus-visible {
+  outline: 2px solid var(--theme-foreground-focus) !important;
+  z-index: 3 !important;
+}
+.observablehq:not(.observablehq--error):has(.observablehq--inspect) {
+  display: block;
+}

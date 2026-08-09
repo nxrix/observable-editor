@@ -27,12 +27,7 @@ const showError = (root, error) => {
 const createCell = (cell) => {
   const id = nextId++;
 
-  const container = document.createElement("div");
-
   const output = document.createElement("div");
-  container.appendChild(output);
-
-  const editor = document.createElement("div");
 
   const select = document.createElement("select");
   for (const type of ["ojs", "js", "ts", "html", "md", "tex", "dot"]) {
@@ -45,8 +40,6 @@ const createCell = (cell) => {
 
   const textarea = document.createElement("textarea");
   textarea.value = cell?.value ?? "";
-
-  const toolbar = document.createElement("div");
 
   const run = document.createElement("button");
   run.textContent = "Run";
@@ -67,22 +60,13 @@ const createCell = (cell) => {
   const down = document.createElement("button");
   down.textContent = "↓";
 
-  toolbar.append(
-    run,
-    pin,
-    hide,
-    up,
-    down,
-    del
-  );
+  const toolbar = document.createElement("div");
+  toolbar.append(run,pin,hide,up,down,del);
 
-  editor.append(
-    select,
-    textarea,
-    toolbar
-  );
-
-  container.appendChild(editor);
+  const container = document.createElement("div");
+  const editor = document.createElement("div");
+  editor.append(select,textarea,toolbar);
+  container.append(output,editor);
   main.appendChild(container);
 
   const state = {
@@ -91,24 +75,27 @@ const createCell = (cell) => {
     expanded: []
   };
 
-  const execute = () => {
+  const execute = async () => {
     cell.value = textarea.value;
     cell.mode = select.value;
-    const old = state.variables;
-    old.forEach(v => v.delete());
+    let old = state.variables;
     //state.variables.forEach(v => v.delete());
     state.variables = [];
+    state.expanded = [];
     try {
       const definition = Kit.transpile(cell);
       const body = compile(definition.body);
-      runtime.define(
+      await runtime.define(
         state,
         {
           ...definition,
           body
         }
       );
+      old.forEach(v => v.delete());
+      old = [];
     } catch (error) {
+      state.variables = old;
       showError(output, error);
     }
   }
@@ -118,6 +105,8 @@ const createCell = (cell) => {
     state.variables.forEach(v => v.delete());
     container.remove();
     cells.delete(id);
+    const i = order.indexOf(id);
+    if (i !== -1) order.splice(i, 1);
   };
 
   pin.onclick = () => {
@@ -159,8 +148,6 @@ const createCell = (cell) => {
   };
 
   cells.set(id, {
-    id,
-    cell,
     state,
     container
   });
@@ -178,8 +165,19 @@ const load = (html) => {
 };
 
 (async () => {
-  load(await (await fetch("test.txt")).text())
-})()
+  const params = new URLSearchParams(location.search);
+  const path = params.get("path");
+  load(await (await fetch(path)).text());
+})();
+
+newButton.addEventListener("click", () => {
+  createCell({
+    value: "",
+    mode: "ojs"
+  });
+});
+
+/*
 
 const handleFiles = (files) => {
   if (files.length === 1 && (
@@ -205,13 +203,6 @@ loadButton.addEventListener("click", () => {
   input.click();
 });
 
-newButton.addEventListener("click", () => {
-  createCell({
-    value: "",
-    mode: "ojs"
-  });
-})
-
 document.addEventListener("dragover", (event) => {
   event.preventDefault();
   event.dataTransfer.dropEffect = "copy";
@@ -224,3 +215,5 @@ document.addEventListener("drop", (event) => {
     handleFiles(files);
   }
 });
+
+*/
