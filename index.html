@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://nxrix.github.io/assets/styles/notebook.css">
+  <style>
+    .observablehq:not(.observablehq--error):has(.observablehq--inspect) {
+      display: block;
+    }
+  </style>
+  <title>Editor</title>
+</head>
+<body>
+  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
+    <button id="loadButton">Load</button>
+    <button id="newButton">New Cell</button>
+    <main style="width:100%;margin:0 auto"></main>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+
+</html>
