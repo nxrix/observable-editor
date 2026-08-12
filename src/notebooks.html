@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="./favicon.ico">
+  <link rel="stylesheet" href="./assets/css/notebook.css">
+  <link rel="stylesheet" href="./assets/css/theme.css">
+  <script src="./assets/js/theme.js"></script>
+  <title>Home</title>
+</head>
+<body>
+  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
+    <main style="width:100%;margin:0 auto">
+      <h1>Notebooks</h1>
+      <br>
+      <div style="border-top:1px solid var(--theme-foreground-faintest);"></div>
+    </main>
+    <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto">
+      <div style="height:24px;display:flex">
+        <div style="margin:auto 0;font-family:var(--sans-serif);font-size:13px"></div>
+        <div style="display:flex;height:100%;aspect-ratio:3;margin-left:auto;outline:1px solid var(--theme-foreground-faintest);border-radius:12px"></div>
+      </div>
+    </footer>
+  </div>
+  <script>
+
+const folder = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H447l-80-80H160v480Zm0 0v-480 480Z"/></svg>`;
+const book2 = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M300-80q-58 0-99-41t-41-99v-520q0-58 41-99t99-41h500v600q-25 0-42.5 17.5T740-220q0 25 17.5 42.5T800-160v80H300Zm-60-267q14-7 29-10t31-3h20v-440h-20q-25 0-42.5 17.5T240-740v393Zm160-13h320v-440H400v440Zm-160 13v-453 453Zm60 187h373q-6-14-9.5-28.5T660-220q0-16 3-31t10-29H300q-26 0-43 17.5T240-220q0 26 17 43t43 17Z"/></svg>`
+
+const list = document.querySelector("main > div");
+
+const titleFor = name =>
+  name
+    .replace(/\/$/, "")
+    .replace(/\.html$/i, "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, c => c.toUpperCase());
+
+const joinPath = (base, name) =>
+  `${base.replace(/\/+$/, "")}/${name}`;
+
+const renderItem = ({
+  icon,
+  text,
+  onclick
+}) => {
+  const item = document.createElement("div");
+
+  item.style.cssText = `
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-height:40px;
+    padding:6px 8px;
+    box-sizing:border-box;
+    border-bottom:1px solid var(--theme-foreground-faintest);
+    color:var(--theme-foreground);
+    cursor:pointer;
+    user-select:none;
+  `;
+
+  item.innerHTML = 
+    (icon?`<div style="
+      width:24px;
+      height:24px;
+      flex:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    ">
+      ${icon}
+    </div>`:"")+`
+    <div style="
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font:400 0.875rem var(--sans-serif);
+    ">
+      ${text}
+    </div>
+  `;
+
+  item.onclick = onclick;
+  item.addEventListener("mouseenter", () => {
+    item.style.background = "var(--theme-background-alt)";
+  });
+  item.addEventListener("mouseleave", () => {
+    item.style.background = "";
+  });
+  return item;
+};
+
+const setPath = (path) => {
+  const url = new URL(window.location);
+  if (path === "/notebooks/") {
+    url.searchParams.delete("path");
+  } else {
+    url.searchParams.set("path", path);
+  }
+  history.pushState({}, "", url);
+};
+
+const load = async (path = "/notebooks/") => {
+  setPath(path);
+  list.replaceChildren();
+  const normalized = path.endsWith("/") ? path : `${path}/`;
+  if (normalized !== "/notebooks/") {
+    const parent =
+      normalized
+        .replace(/\/$/, "")
+        .split("/")
+        .slice(0, -1)
+        .join("/") + "/";
+
+    list.appendChild(
+      renderItem({
+        //icon: back,
+        text: "...",
+        onclick: () => load(parent)
+      })
+    );
+  }
+  const files = await (await fetch(normalized)).json();
+  const folders = files
+    .filter(name => name.endsWith("/"))
+    .sort((a, b) => a.localeCompare(b));
+  const notebooks = files
+    .filter(name => /\.html$/i.test(name))
+    .sort((a, b) => a.localeCompare(b));
+  for (const name of folders) {
+    const itemPath = joinPath(normalized, name);
+    list.appendChild(
+      renderItem({
+        icon: folder,
+        text: titleFor(name),
+        onclick: () => load(itemPath)
+      })
+    );
+  }
+  for (const name of notebooks) {
+    const itemPath = joinPath(normalized, name);
+    const a = document.createElement("a");
+    a.href = `/src/index.html?path=${encodeURIComponent(itemPath)}`;
+    a.style.cssText = `text-decoration:none;color:inherit;`;
+    const item = renderItem({
+      icon: book2,
+      text: titleFor(name),
+      onclick: null
+    });
+    a.appendChild(item);
+    list.appendChild(a);
+  }
+};
+const params = new URLSearchParams(window.location.href);
+load(params.get("path")||"/notebooks/");
+
+  </script>
+</body>
+</html>

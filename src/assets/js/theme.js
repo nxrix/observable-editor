@@ -1,5 +1,6 @@
 (()=>{
   const root = document.documentElement;
+  let worker;
   const resize = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -20,9 +21,13 @@
   const applyTheme = (t) => {
     if (t === "auto") t = window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
     root.setAttribute("data-theme",t);
+    if (worker?.contentDocument?.documentElement) {
+      worker.contentDocument.documentElement.setAttribute("data-theme",t);
+    }
   }
   applyTheme(theme);
   document.addEventListener("DOMContentLoaded", () => {
+    worker = document.querySelector("#worker");
     const e = document.querySelector("footer > div > div:last-child");
     const setTheme = (t) => {
       theme = t;
@@ -30,7 +35,6 @@
       applyTheme(t);
       e.querySelectorAll("button").forEach((btn,i) => {
         const b = themes[i]===t;
-        //btn.style.background = b?"var(--c0)":"var(--c1)";
         btn.style.color = b?"var(--theme-foreground)":"var(--theme-foreground-faint)";
         btn.style.outline = b?"1px solid var(--theme-foreground-faintest)":"none";
         btn.style.zIndex = b?"2":"1";

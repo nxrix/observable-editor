@@ -4,68 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="./favicon.ico">
-  <link rel="stylesheet" href="https://nxrix.github.io/assets/styles/notebook.css">
+  <link rel="stylesheet" href="./assets/css/notebook.css">
   <link rel="stylesheet" href="./assets/css/theme.css">
   <script src="./assets/js/theme.js"></script>
-  <title>Home</title>
+  <title>Editor</title>
 </head>
-<body>
+<body style="padding:0">
+  <div style="display:flex;align-items:center;gap:8px;max-width:calc(var(--max-width) + 48px);height:32px;margin:0 auto;padding:32px 24px 0 24px;">
+    <a href="./notebooks.html">< Back</a>
+    <button id="saveButton" style="font-family:inherit">Save</button>
+  </div>
   <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
-    <main style="width:100%;margin:0 auto">
-      <h1>Notebooks</h1>
-      <hr>
-      <div style="display:grid;gap:0.875rem;grid-template-columns:repeat(auto-fill,minmax(160px,5fr));"></div>
+    <main style="position:relative;width:100%;max-width:none;margin:0 auto">
+      <iframe id="worker" src="./worker.html" frameborder="0" style="width:100%;min-height:calc(var(--vh) - 64px);margin-bottom:-64px"></iframe>
+      <div id="overlay" style="position:absolute;inset:15px 0;width:100%;max-width:calc(var(--max-width) + 48px);height:fit-content;margin:0 auto;z-index:1;min-height:calc(var(--vh) - 15px - 112px - 64px);pointer-events:none"></div>
     </main>
-    <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto">
-      <hr>
-      <div style="height:24px;display:flex">
+    <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto;z-index:1">
+      <div style="height:24px;display:flex;margin:0px 24px 24px 24px">
         <div style="margin:auto 0;font-family:var(--sans-serif);font-size:13px"></div>
-        <div style="display:flex;height:100%;aspect-ratio:3;margin-left:auto;outline:1px solid var(--theme-foreground-faintest);border-radius:12px"></div>
+        <div style="background:var(--theme-background);display:flex;height:100%;aspect-ratio:3;margin-left:auto;outline:1px solid var(--theme-foreground-faintest);border-radius:12px"></div>
       </div>
     </footer>
   </div>
-  <script>
-
-(async() => {
-  const list = document.querySelector("main div");
-  const notebooks = await(await fetch("/notebooks/")).json();
-  for (const i of notebooks) {
-    const name = i.split("/").pop().replace(/\.html$/i, "");
-    const title = name
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, c => c.toUpperCase());
-    const a = document.createElement("a");
-    a.href = `/src/editor.html?path=/notebooks/${i}`;
-    a.style.cssText = `
-      display:inline-flex;
-      flex-direction:column;
-      align-items:start;
-      font:400 0.75rem var(--sans-serif);
-      color:var(--theme-foreground);
-      width:100%;
-    `;
-    a.innerHTML = `
-      <img 
-        alt="thumbnail"
-        src="/thumbnails/${name}.png"
-        style="
-          border: 1px solid var(--theme-foreground-faintest);
-          border-radius: 4px;
-          box-sizing: border-box;
-          width: 100%;
-          flex: 1;
-          object-fit: cover
-        "
-      />
-
-      <div style="width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:8px">
-        ${title}
-      </div>
-    `;
-    list.appendChild(a);
-  }
-})();
-
-  </script>
+  <script type="module" src="./assets/js/index.js"></script>
 </body>
 </html>

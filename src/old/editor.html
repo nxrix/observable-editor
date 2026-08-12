@@ -4,21 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="./favicon.ico">
-  <link rel="stylesheet" href="https://nxrix.github.io/assets/styles/notebook.css">
+  <link rel="stylesheet" href="./assets/css/notebook.css">
   <link rel="stylesheet" href="./assets/css/theme.css">
   <script src="./assets/js/theme.js"></script>
   <title>Editor</title>
 </head>
 <body>
   <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
-    <div>
-      <a href="./index.html">< Home</a>
-    </div>
     <main style="width:100%;margin:0 auto">
+      <button id="openButton">Open</button>
       <button id="newButton">New Cell</button>
+      <hr>
     </main>
     <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto">
-      <hr>
+      <!--hr-->
       <div style="height:24px;display:flex">
         <div style="margin:auto 0;font-family:var(--sans-serif);font-size:13px"></div>
         <div style="display:flex;height:100%;aspect-ratio:3;margin-left:auto;outline:1px solid var(--theme-foreground-faintest);border-radius:12px"></div>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/src/favicon.ico">
+  <link rel="stylesheet" href="/src/assets/css/notebook.css">
+  <link rel="stylesheet" href="/src/assets/css/theme.css">
+  <script>
+    (()=>{
+      const t = localStorage.getItem("theme")||"auto";
+      document.documentElement.setAttribute("data-theme",t === "auto"?
+        (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):
+        t
+      );
+    })();
+  </script>
+  <title>Worker</title>
+</head>
+<body style="overflow:hidden">
+  <main style="width:100%;margin:0 auto"></main>
+  <script type="module" src="/src/assets/js/worker.js"></script>
+</body>
+</html>

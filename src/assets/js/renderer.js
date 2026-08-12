@@ -22,6 +22,8 @@ const showError = (root, error) => {
 
 const createCell = (cell) => {
   const root = document.createElement("div");
+  root.className = "observablehq observablehq--cell";
+  main.appendChild(root);
   const state = {
     root,
     variables: []
@@ -38,14 +40,18 @@ const createCell = (cell) => {
   } catch (error) {
     showError(root, error);
   }
-  main.appendChild(root);
 }
 
-const load = (html) => {
+const open = (html) => {
   const notebook = Kit.deserialize(html);
   document.title = notebook.title;
-  const t = window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-  document.documentElement.dataset.theme = notebook.theme==="air"?"light":t;
+  //const t = window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  //document.documentElement.dataset.theme = notebook.theme==="air"?"light":t;
+  const t = localStorage.getItem("theme")||"auto";
+  document.documentElement.setAttribute("data-theme",t === "auto"?
+    (window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):
+    t
+  );
   for (const cell of notebook.cells) {
     createCell(cell);
   }
@@ -54,5 +60,30 @@ const load = (html) => {
 (async () => {
   const params = new URLSearchParams(location.search);
   const path = params.get("path");
-  load(await (await fetch(path)).text());
+  if (path) open(await (await fetch(path)).text());
 })();
+
+const handleFiles = (files) => {
+  if (files.length === 1 && (
+      files[0].type === "text/html" ||
+      files[0].name.toLowerCase().endsWith(".html") ||
+      files[0].name.toLowerCase().endsWith(".htm")
+    )) {
+    const file = files[0];
+    file.text().then(open);
+    return;
+  }
+}
+
+document.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+});
+
+document.addEventListener("drop", (event) => {
+  event.preventDefault();
+  const files = [...event.dataTransfer.files];
+  if (files.length) {
+    handleFiles(files);
+  }
+});

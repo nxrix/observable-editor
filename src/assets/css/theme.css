@@ -25,6 +25,3 @@ footer > div > div:last-child button:focus-visible {
   outline: 2px solid var(--theme-foreground-focus) !important;
   z-index: 3 !important;
 }
-.observablehq:not(.observablehq--error):has(.observablehq--inspect) {
-  display: block;
-}

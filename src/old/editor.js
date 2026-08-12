@@ -1,7 +1,9 @@
 import * as Kit from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/+esm";
 import * as Runtime from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/runtime/+esm";
 
-const compile = (value) => (1, eval)(`"use strict";(\n${value}\n)\n`);
+const compile = (body, id) => {
+  return eval(`"use strict";(\n${body}\n)\n${id ? `//# sourceURL=observablehq-${id}` : ""}`);
+}
 
 const runtime = new Runtime.NotebookRuntime();
 const main = document.querySelector("main");
@@ -27,7 +29,37 @@ const showError = (root, error) => {
 const createCell = (cell) => {
   const id = nextId++;
 
+  const container = document.createElement("div");
+  container.dataset.name = "container";
+  container.style.marginTop = "1rem";
+  container.style.marginBottom = "1rem";
+  main.appendChild(container);
+
   const output = document.createElement("div");
+  output.dataset.name = "output";
+
+  const editor = document.createElement("div");
+  editor.dataset.name = "editor";
+  editor.style.display = "flex";
+  editor.style.flexDirection = "column";
+  editor.style.gap = "4px";
+  editor.style.padding = "9px";
+  editor.style.borderRadius = "5px";
+  editor.style.outlineOffset = "-1px";
+  editor.style.outline = "1px solid var(--theme-foreground-faintest)";
+
+  container.append(output,editor);
+
+  const textarea = document.createElement("textarea");
+  textarea.style.resize = "none";
+  textarea.style.overflow = "hidden";
+  textarea.value = cell?.value ?? "";
+  const resize = () => {
+    textarea.style.height = "0px";
+    textarea.style.height = textarea.scrollHeight+"px";
+  };
+  textarea.addEventListener("input", resize);
+  window.addEventListener("resize", resize);
 
   const select = document.createElement("select");
   for (const type of ["ojs", "js", "ts", "html", "md", "tex", "dot"]) {
@@ -37,9 +69,6 @@ const createCell = (cell) => {
     select.appendChild(option);
   }
   select.value = cell.mode;
-
-  const textarea = document.createElement("textarea");
-  textarea.value = cell?.value ?? "";
 
   const run = document.createElement("button");
   run.textContent = "Run";
@@ -55,33 +84,33 @@ const createCell = (cell) => {
   output.hidden = cell.hidden;
 
   const up = document.createElement("button");
-  up.textContent = "↑";
+  up.textContent = "▲";
 
   const down = document.createElement("button");
-  down.textContent = "↓";
+  down.textContent = "▼";
 
   const toolbar = document.createElement("div");
-  toolbar.append(run,pin,hide,up,down,del);
+  toolbar.dataset.name = "toolbar";
+  toolbar.style.display = "flex";
+  toolbar.style.gap = "4px";
+  //toolbar.style.marginBottom = "1rem";
+  toolbar.append(select,run,pin,hide,up,down,del);
 
-  const container = document.createElement("div");
-  const editor = document.createElement("div");
-  editor.append(select,textarea,toolbar);
-  container.append(output,editor);
-  main.appendChild(container);
+  editor.append(textarea,toolbar);
 
   const state = {
     root: output,
-    variables: [],
-    expanded: []
+    variables: []
   };
 
   const execute = async () => {
     cell.value = textarea.value;
     cell.mode = select.value;
-    let old = state.variables;
-    //state.variables.forEach(v => v.delete());
+    state.variables.forEach(v => {
+      v._observer = {};
+      v.delete();
+    });
     state.variables = [];
-    state.expanded = [];
     try {
       const definition = Kit.transpile(cell);
       const body = compile(definition.body);
@@ -92,17 +121,19 @@ const createCell = (cell) => {
           body
         }
       );
-      old.forEach(v => v.delete());
-      old = [];
     } catch (error) {
-      state.variables = old;
       showError(output, error);
     }
   }
   run.onclick = execute;
 
   del.onclick = () => {
-    state.variables.forEach(v => v.delete());
+    state.variables.forEach(v => {
+      v._observer = {};
+      v.delete();
+    });
+    textarea.removeEventListener("input", resize);
+    window.removeEventListener("resize", resize);
     container.remove();
     cells.delete(id);
     const i = order.indexOf(id);
@@ -154,6 +185,7 @@ const createCell = (cell) => {
   order.push(id);
 
   execute();
+  resize();
   return id;
 }
 
@@ -164,11 +196,11 @@ const load = (html) => {
   }
 };
 
-(async () => {
+/*(async () => {
   const params = new URLSearchParams(location.search);
   const path = params.get("path");
   load(await (await fetch(path)).text());
-})();
+})();*/
 
 newButton.addEventListener("click", () => {
   createCell({
@@ -176,8 +208,6 @@ newButton.addEventListener("click", () => {
     mode: "ojs"
   });
 });
-
-/*
 
 const handleFiles = (files) => {
   if (files.length === 1 && (
@@ -191,7 +221,7 @@ const handleFiles = (files) => {
   }
 }
 
-loadButton.addEventListener("click", () => {
+openButton.addEventListener("click", () => {
   const input = document.createElement("input");
   input.type = "file";
   input.multiple = true;
@@ -215,5 +245,3 @@ document.addEventListener("drop", (event) => {
     handleFiles(files);
   }
 });
-
-*/
