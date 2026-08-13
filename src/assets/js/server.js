@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 
-import { spawn, execSync } from "node:child_process";
+import { spawn, execSync, exec } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../../..");
@@ -20,45 +20,93 @@ const mime = {
   ".ico": "image/x-icon"
 };
 
-const findChrome = () => {
-  const locations = [
-    // Registry location
-    (() => {
-      try {
-        return execSync(
-          "reg query \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe\" /ve",
-          {encoding:"utf8"}
-        )
-        .match(/REG_SZ\s+(.+)/)?.[1]
-        ?.trim();
-      } catch {
-        return null;
-      }
-    })(),
-    // Common locations
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-    path.join(
-      os.homedir(),
-      "AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"
-    )
-  ];
-  return locations.find(x => x && fs.existsSync(x));
+function findChrome() {
+  const platform = process.platform;
+  if (platform === "win32") {
+    // Windows
+    try {
+      const out = execSync(
+        'reg query "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe" /ve',
+        { encoding: "utf8" }
+      );
+      const match = out.match(/REG_SZ\s+(.+)/);
+      if (match) return match[1].trim();
+    } catch {}
+    const candidates = [
+      "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+      "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+      path.join(os.homedir(), "AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"),
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+    // Fallback: try `where`
+    try {
+      return execSync("where chrome", { encoding: "utf8" }).split("\n")[0].trim();
+    } catch {}
+    return null;
+  }
+  if (platform === "darwin") {
+    // macOS
+    const macPath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    if (fs.existsSync(macPath)) return macPath;
+    return null;
+  }
+  if (platform === "linux") {
+    // Linux: try `which` first
+    try {
+      const result = execSync("which google-chrome || which chromium-browser || which chromium", {
+        encoding: "utf8",
+        shell: "/bin/bash",
+      });
+      if (result) return result.trim();
+    } catch {}
+    // Fallback to common locations
+    const common = [
+      "/usr/bin/google-chrome",
+      "/usr/bin/chromium-browser",
+      "/snap/bin/chromium",
+    ];
+    for (const c of common) {
+      if (fs.existsSync(c)) return c;
+    }
+    return null;
+  }
+  // Unsupported platform
+  return null;
 }
 
 const openChrome = (url,chrome) => {
-  spawn(
-    chrome,
-    [
-      `--app=${url}`,
-      "--disable-translate",
-      "--disable-features=Translate"
-    ],
-    {
+  if (chrome) {
+    spawn(chrome, [`--app=${url}`, "--disable-translate", "--disable-features=Translate"], {
       detached: true,
-      stdio: "ignore"
-    }
-  ).unref();
+      stdio: "ignore",
+    }).unref();
+    return;
+  }
+
+  // Try Termux (Android)
+  try {
+    execSync("which termux-open-url", { stdio: "ignore" });
+    spawn("termux-open-url", [url], { detached: true, stdio: "ignore" }).unref();
+    return;
+  } catch {}
+
+  // Use system default opener (desktop)
+  const platform = process.platform;
+  let cmd;
+  if (platform === "win32") cmd = `start "${url}"`;
+  else if (platform === "darwin") cmd = `open "${url}"`;
+  else if (platform === "linux") cmd = `xdg-open "${url}"`;
+  else {
+    // For iOS, other mobile, or unknown
+    console.log("Please open this URL in your browser:", url);
+    return;
+  }
+
+  exec(cmd, { shell: true }, (err) => {
+    if (err) console.log("Could not open browser automatically. Please open manually:", url);
+  });
 }
 
 const server = http.createServer((req,res) => {
@@ -153,10 +201,6 @@ server.listen(0,"127.0.0.1",()=>{
   const url = `http://127.0.0.1:${port}/src/notebooks.html`;
   console.log("Running:",url);
   const chrome = findChrome();
-  if (!chrome) {
-    console.log("Chrome not found.");
-    console.log("Open manually");
-    return;
-  }
+  if (!chrome) console.log("Chrome not found.");
   openChrome(url,chrome);
 });
