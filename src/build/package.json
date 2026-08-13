@@ -1,0 +1,8 @@
+{
+  "main": "build.js",
+  "type": "module",
+  "dependencies": {
+    "@observablehq/notebook-kit": "^2.3.0",
+    "esbuild": "^0.28.2"
+  }
+}

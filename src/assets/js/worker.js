@@ -1,5 +1,6 @@
-import * as Kit from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/+esm";
-import * as Runtime from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/runtime/+esm";
+//import * as Kit from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/+esm";
+//import * as Runtime from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/runtime/+esm";
+import { Kit, Runtime } from "/src/build/dist/bundle.js";
 
 const compile = (body, id) => {
   return eval(`"use strict";(\n${body}\n)\n${id ? `//# sourceURL=observablehq-${id}` : ""}`);
