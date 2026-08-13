@@ -18,12 +18,14 @@ jobs:
         with:
           node-version: 24
 
-      #- run: npm ci
-      - run: npm install
+      #- run: npm install
+      - run: npm ci
       - run: node build.js
 
-      - name: Commit dist
+      - name: Commit
         run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add -f dist
           git add package-lock.json
           git commit -m "Update dist build" || exit 0
