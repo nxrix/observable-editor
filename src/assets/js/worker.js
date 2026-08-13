@@ -183,20 +183,6 @@ window.addEventListener("message", e => {
   const msg = e.data;
   switch (msg.type) {
     case "open":
-      if (msg.path) {
-        /*const path = msg.path;
-        const originalFetch = window.fetch;
-        window.fetch = (input, init) => {
-          const base = path.slice(0, path.lastIndexOf("/") + 1);
-          if (typeof input === "string" && input.startsWith(".")) {
-            input = new URL(input, base).href;
-          }
-          return originalFetch(input, init);
-        };*/
-        //const base = document.createElement("base");
-        //base.href = path.slice(0, path.lastIndexOf("/") + 1);
-        //document.head.appendChild(base);
-      }
       open(msg.value);
       break;
     case "save":

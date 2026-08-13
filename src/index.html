@@ -10,14 +10,14 @@
   <title>Editor</title>
 </head>
 <body style="padding:0">
-  <div style="display:flex;align-items:center;gap:8px;max-width:calc(var(--max-width) + 48px);height:32px;margin:0 auto;padding:32px 24px 0 24px;">
-    <a href="./notebooks.html">< Back</a>
+  <div style="display:flex;align-items:center;gap:8px;max-width:calc(var(--max-width) + 48px);height:32px;margin:0 auto;padding:24px">
+    <a href="./notebooks.html">&lt; Back</a>
     <button id="saveButton" style="font-family:inherit">Save</button>
   </div>
-  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 64px)">
+  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 80px)">
     <main style="position:relative;width:100%;max-width:none;margin:0 auto">
-      <iframe id="worker" src="./worker.html" frameborder="0" style="width:100%;min-height:calc(var(--vh) - 64px);margin-bottom:-64px"></iframe>
-      <div id="overlay" style="position:absolute;inset:15px 0;width:100%;max-width:calc(var(--max-width) + 48px);height:fit-content;margin:0 auto;z-index:1;min-height:calc(var(--vh) - 15px - 112px - 64px);pointer-events:none"></div>
+      <iframe id="worker" src="./worker.html" frameborder="0" style="width:100%;margin-bottom:-64px"></iframe>
+      <div id="overlay" style="position:absolute;inset:15px 0;width:100%;max-width:calc(var(--max-width) + 48px);height:fit-content;margin:0 auto;z-index:1;pointer-events:none"></div>
     </main>
     <footer style="width:100%;max-width:var(--max-width);margin:auto auto 0 auto;z-index:1">
       <div style="height:24px;display:flex;margin:0px 24px 24px 24px">

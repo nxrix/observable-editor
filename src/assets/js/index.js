@@ -306,7 +306,10 @@ window.addEventListener("message", e => {
   switch (msg.type) {
     case "hello":
       (async () => {
-        if (path) open(await (await fetch(path)).text());
+        if (path) {
+          document.body.querySelector("div a").href = "./notebooks.html?path="+path.replace(/\/[^/]*\.html?$/,"");
+          open(await (await fetch(path)).text());
+        }
       })();
       break;
     case "notebook":
@@ -355,18 +358,10 @@ window.addEventListener("message", e => {
 
 const open = (html) => {
   clear();
-  if (path) {
-    worker.contentWindow.postMessage({
-      type: "open",
-      value: html,
-      path
-    }, "*");
-  } else {
-    worker.contentWindow.postMessage({
-      type: "open",
-      value: html
-    }, "*");
-  }
+  worker.contentWindow.postMessage({
+    type: "open",
+    value: html
+  }, "*");
 };
 
 const handleFiles = (files) => {

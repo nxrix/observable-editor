@@ -62,8 +62,13 @@ const openChrome = (url,chrome) => {
 }
 
 const server = http.createServer((req,res) => {
-  const request = new URL(req.url,`http://${req.headers.host}`);
-  let pathname = decodeURIComponent(request.pathname);
+  const url = new URL(req.url,`http://${req.headers.host}`);
+  let pathname = decodeURIComponent(url.pathname);
+
+  if (url.searchParams.has("editor") && pathname.startsWith("/notebooks/") && pathname.endsWith("/worker.js")) {
+    pathname = "/src/assets/js/worker.js";
+  }
+
   if (req.method === "POST" && pathname === "/api/save") {
     if (!req.headers.referer || req.headers.referer.endsWith("/src/assets/js/worker.js")) {
       res.writeHead(403);
@@ -114,6 +119,27 @@ const server = http.createServer((req,res) => {
       res.end("Not found");
       return;
     }
+
+    if (pathname === "/src/worker.html") {
+      let html = data.toString();
+      const referer = req.headers.referer;
+      if (referer) {
+        try {
+          const path = new URL(referer).searchParams.get("path");
+          if (path) {
+            html = html.replace(
+              "/src/assets/js/worker.js",
+              `${path.replace(/\/[^/]*\.html?$/,"")}/worker.js?editor`
+            );
+          }
+        } catch {}
+      }
+      res.writeHead(200, {
+        "Content-Type": "text/html"
+      });
+      return res.end(html);
+    }
+
     res.writeHead(200,{
       "Content-Type":
         mime[path.extname(file)] || "application/octet-stream"
