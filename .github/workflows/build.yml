@@ -24,6 +24,7 @@ jobs:
 
       - name: Commit dist
         run: |
-          git add dist
+          git add -f dist
+          git add package-lock.json
           git commit -m "Update dist build" || exit 0
           git push
