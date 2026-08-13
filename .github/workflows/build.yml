@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 24
 
-      #- run: npm install
-      - run: npm ci
+      - run: npm install
+      #- run: npm ci
       - run: node build.js
 
       - name: Commit
