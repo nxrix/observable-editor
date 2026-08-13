@@ -18,7 +18,8 @@ jobs:
         with:
           node-version: 24
 
-      - run: npm ci
+      #- run: npm ci
+      - run: npm install
       - run: node build.js
 
       - name: Commit dist
