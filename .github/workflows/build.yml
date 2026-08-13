@@ -1,0 +1,29 @@
+name: Build notebook-kit
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - run: npm ci
+      - run: node build.js
+
+      - name: Commit dist
+        run: |
+          git add dist
+          git commit -m "Update dist build" || exit 0
+          git push
