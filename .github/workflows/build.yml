@@ -1,4 +1,4 @@
-name: Build notebook-kit
+name: Build
 
 on:
   workflow_dispatch:
