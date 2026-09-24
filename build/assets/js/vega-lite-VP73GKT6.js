@@ -1,0 +1,10 @@
+import "./chunk-RRBDIJ6C.js";
+
+// node_modules/@observablehq/notebook-kit/dist/src/runtime/stdlib/vega-lite.js
+import * as vega from "https://cdn.jsdelivr.net/npm/vega/+esm";
+import * as vegaLite from "https://cdn.jsdelivr.net/npm/vega-lite/+esm";
+import * as vegaLiteApi from "https://cdn.jsdelivr.net/npm/vega-lite-api/+esm";
+var vl = vegaLiteApi.register(vega, vegaLite);
+export {
+  vl
+};

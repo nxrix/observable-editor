@@ -1,5 +1,6 @@
-import * as Kit from "@observablehq/notebook-kit";
-import * as Runtime from "@observablehq/notebook-kit/runtime";
+//import * as Kit from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/+esm";
+//import * as Runtime from "https://cdn.jsdelivr.net/npm/@observablehq/notebook-kit/runtime/+esm";
+import { Kit, Runtime } from "/src/build/dist/bundle.js";
 
 const compile = (body, id) => {
   return eval(`"use strict";(\n${body}\n)\n${id ? `//# sourceURL=observablehq-${id}` : ""}`);
@@ -19,9 +20,6 @@ const showError = (root, error) => {
   root.appendChild(outer);
 }
 
-let port = null;
-const send = (msg) => port?.postMessage(msg);
-
 const pendingResizes = new Map();
 let resizeScheduled = false;
 
@@ -30,10 +28,10 @@ const sendResize = (id, value) => {
   if (!resizeScheduled) {
     resizeScheduled = true;
     requestAnimationFrame(() => {
-      send({
+      parent.postMessage({
         type: "resizeCells",
         values: [...pendingResizes]
-      });
+      }, "*");
       pendingResizes.clear();
       resizeScheduled = false;
     });
@@ -49,23 +47,17 @@ const order = [];
 let nextId = 0;
 
 const createCell = (cell) => {
-  if (cell.id === undefined) {
-    let max = 0;
-    for (const c of cells.values()) {
-      if (Number.isInteger(c.cell.id) && c.cell.id > max) max = c.cell.id;
-    }
-    cell.id = max + 1;
-  }
   const id = nextId++;
 
   const container = document.createElement("div");
   container.className = "observablehq observablehq--cell";
   container.style.minHeight = "1px";
+  //container.style.background = "#00f5";
   main.appendChild(container);
 
   const observer = new ResizeObserver(() => {
     const r = container.getBoundingClientRect();
-    sendResize(id,r.height);
+    sendResize(id,r.height);//container.offsetHeight);
   });
   observer.observe(container);
 
@@ -121,6 +113,8 @@ const createCell = (cell) => {
 
   const hide = () => {
     cell.hidden = !cell.hidden;
+    //container.hidden = cell.hidden;
+    //container.style.minHeight = cell.hidden?"1px":"1.5rem";
     execute();
   };
 
@@ -174,39 +168,30 @@ const clear = () => {
 let notebook = null;
 
 const open = (html) => {
-  if (!/<notebook[\s>]/i.test(html)) {
-    send({ type: "error", value: "Not an Observable notebook" });
-    return false;
-  }
   clear();
   notebook = Kit.deserialize(html);
-  send({
+  parent.postMessage({
     type: "notebook",
     value: notebook
-  });
+  }, "*");
   for (const c of notebook.cells) {
     createCell(c);
   }
-  return true;
 }
 
-const handle = (msg) => {
+window.addEventListener("message", e => {
+  if(e.source !== parent) return;
+  const msg = e.data;
   switch (msg.type) {
     case "open":
       open(msg.value);
       break;
-    case "sync":
-      for (const [id, value] of msg.values) {
-        const c = cells.get(id);
-        if (c) c.cell.value = value;
-      }
-      break;
     case "save":
       notebook.cells = order.map(id => cells.get(id).cell);
-      send({
+      parent.postMessage({
         type: "save",
         value: Kit.serialize(notebook)
-      });
+      }, "*");
       break;
     case "insert":
       const index = order.indexOf(msg.id);
@@ -246,15 +231,11 @@ const handle = (msg) => {
       }
       break;
   }
-};
-
-window.addEventListener("message", e => {
-  if (e.source !== parent) return;
-  if (e.data?.type !== "init" || !e.ports.length || port) return;
-  port = e.ports[0];
-  port.onmessage = (e) => handle(e.data);
-  send({ type: "hello" });
 });
+
+parent.postMessage({
+  type: "hello"
+},"*");
 
 const handleFiles = (files) => {
   if (files.length === 1 && (
@@ -263,9 +244,7 @@ const handleFiles = (files) => {
       files[0].name.toLowerCase().endsWith(".htm")
     )) {
     const file = files[0];
-    file.text().then((html) => {
-      if (open(html)) send({ type: "loaded", value: file.name });
-    });
+    file.text().then(open);
     return;
   }
 }
@@ -282,10 +261,3 @@ document.addEventListener("drop", (event) => {
     handleFiles(files);
   }
 });
-
-const announce = () => {
-  if (port) return;
-  parent.postMessage({ type: "hello" }, "*");
-  setTimeout(announce, 100);
-};
-announce();

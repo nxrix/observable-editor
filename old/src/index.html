@@ -7,18 +7,14 @@
   <link rel="stylesheet" href="./assets/css/notebook.css">
   <link rel="stylesheet" href="./assets/css/theme.css">
   <script src="./assets/js/theme.js"></script>
-  <title>Observable Editor</title>
+  <title>Editor</title>
 </head>
 <body style="padding:0">
-  <header style="display:flex;align-items:center;gap:8px;max-width:calc(var(--max-width) + 48px);height:32px;margin:0 auto;padding:24px 24px 0 24px">
-    <strong style="font-family:var(--sans-serif);font-size:14px">Observable Editor</strong>
-    <span id="fileName" style="font-family:var(--sans-serif);font-size:14px;color:var(--theme-foreground-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <span style="flex:1"></span>
-    <span id="status" style="font-family:var(--sans-serif);font-size:14px;color:var(--theme-foreground-faint);opacity:0;transition:opacity .5s"></span>
-    <button id="loadButton" style="font-family:inherit">Load</button>
+  <div style="display:flex;align-items:center;gap:8px;max-width:calc(var(--max-width) + 48px);height:32px;margin:0 auto;padding:24px">
+    <a href="./notebooks.html">&lt; Back</a>
     <button id="saveButton" style="font-family:inherit">Save</button>
-  </header>
-  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 56px)">
+  </div>
+  <div style="display:flex;flex-direction:column;min-height:calc(var(--vh) - 80px)">
     <main style="position:relative;width:100%;max-width:none;margin:0 auto">
       <iframe id="worker" src="./worker.html" frameborder="0" style="width:100%;margin-bottom:-64px"></iframe>
       <div id="overlay" style="position:absolute;inset:15px 0;width:100%;max-width:calc(var(--max-width) + 48px);height:fit-content;margin:0 auto;z-index:1;pointer-events:none"></div>
